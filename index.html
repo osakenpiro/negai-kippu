@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>願い片道きっぷ⭐</title>
+<meta property="og:title" content="願い片道きっぷ⭐">
+<meta property="og:description" content="夜空を走る列車から、届かないかもしれない想いを送る。">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌠</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Klee+One:wght@400;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Klee One','Hiragino Mincho ProN',serif;
+  background:#050A18;color:#D4E4FF;
+  min-height:100vh;overflow-x:hidden;
+  position:relative;
+}
+
+/* === Starfield === */
+canvas#stars{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* === Train track line === */
+.track{
+  position:fixed;bottom:60px;left:0;width:200%;height:2px;z-index:1;
+  background:linear-gradient(90deg,transparent 0%,rgba(180,200,255,.15) 20%,rgba(180,200,255,.3) 50%,rgba(180,200,255,.15) 80%,transparent 100%);
+  animation:trackScroll 20s linear infinite;
+}
+@keyframes trackScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* === Train === */
+.train-wrap{position:fixed;bottom:52px;z-index:2;animation:trainMove 30s linear infinite;pointer-events:none}
+@keyframes trainMove{0%{left:-120px}100%{left:calc(100% + 120px)}}
+.train{font-size:32px;filter:drop-shadow(0 0 12px rgba(100,160,255,.5));transform:scaleX(-1)}
+.train-smoke{
+  position:absolute;top:-18px;left:8px;
+  width:8px;height:8px;background:rgba(200,220,255,.3);
+  border-radius:50%;
+  animation:smoke 2s ease-out infinite;
+}
+.train-smoke:nth-child(2){animation-delay:.5s;left:14px}
+.train-smoke:nth-child(3){animation-delay:1s;left:4px}
+@keyframes smoke{
+  0%{transform:translateY(0) scale(1);opacity:.4}
+  100%{transform:translateY(-40px) translateX(-10px) scale(3);opacity:0}
+}
+
+/* === App === */
+#app{
+  position:relative;z-index:5;
+  max-width:480px;margin:0 auto;min-height:100vh;
+  padding:0 0 80px;
+}
+
+/* === Header === */
+.header{
+  position:sticky;top:0;z-index:10;
+  background:rgba(5,10,24,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(100,160,255,.15);
+  padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.h-title{font-family:'Zen Old Mincho',serif;font-size:18px;font-weight:700;color:#E8D5A3;letter-spacing:2px}
+.h-sub{font-size:10px;color:rgba(180,200,255,.5);margin-top:2px}
+.tab-btn{
+  padding:5px 14px;border-radius:20px;border:1px solid rgba(100,160,255,.2);
+  font-size:12px;cursor:pointer;transition:all .3s;
+  font-family:'Klee One',serif;
+  background:transparent;color:rgba(180,200,255,.6);
+}
+.tab-active{background:rgba(100,160,255,.15);color:#E8D5A3;border-color:rgba(232,213,163,.3)}
+
+/* === Shared styles === */
+.label{
+  font-family:'Zen Old Mincho',serif;
+  font-size:13px;font-weight:700;color:#E8D5A3;
+  display:block;margin-bottom:8px;letter-spacing:1px;
+}
+.section{margin-bottom:20px}
+
+/* === Ticket (from) === */
+.ticket{
+  background:linear-gradient(135deg,rgba(30,20,60,.6),rgba(20,30,60,.6));
+  border:1px solid rgba(232,213,163,.2);
+  border-radius:14px;padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.ticket::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(135deg,rgba(100,160,255,.05),transparent);
+  pointer-events:none;
+}
+.ticket-name{font-size:15px;color:#D4E4FF;font-weight:600}
+.ticket-prefix{color:rgba(180,200,255,.5);font-size:12px}
+.shuffle-btn{
+  background:none;border:1px solid rgba(232,213,163,.2);
+  border-radius:50%;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;
+  transition:all .3s;color:#E8D5A3;
+}
+.shuffle-btn:hover{border-color:#E8D5A3;background:rgba(232,213,163,.1)}
+
+/* === To buttons === */
+.to-btn{
+  display:inline-block;margin:3px;
+  padding:8px 14px;border-radius:20px;
+  border:1px solid rgba(100,160,255,.2);
+  background:rgba(20,30,60,.4);
+  font-size:13px;color:rgba(180,200,255,.7);
+  cursor:pointer;transition:all .3s;
+  font-family:'Klee One',serif;
+}
+.to-btn-active{
+  border-color:rgba(232,213,163,.5);
+  background:rgba(232,213,163,.1);
+  color:#E8D5A3;font-weight:600;
+  box-shadow:0 0 12px rgba(232,213,163,.1);
+}
+
+/* === Feel buttons === */
+.feel-wrap{display:flex;gap:5px;flex-wrap:wrap}
+.feel-btn{
+  flex:1;padding:12px 4px;border-radius:14px;min-width:0;
+  border:1px solid rgba(100,160,255,.15);
+  background:rgba(20,30,60,.3);
+  cursor:pointer;transition:all .3s;text-align:center;
+  font-family:'Klee One',serif;
+}
+.feel-emoji{font-size:28px;margin-bottom:4px;display:block}
+.feel-label{font-size:11px;color:rgba(180,200,255,.6)}
+.feel-active{transform:scale(1.05)}
+
+/* === Preview === */
+.preview{
+  background:linear-gradient(135deg,rgba(30,20,60,.5),rgba(15,25,50,.5));
+  border:1px solid rgba(232,213,163,.2);
+  border-radius:16px;padding:16px;
+  text-align:center;line-height:2;
+  font-size:14px;margin-bottom:16px;
+  position:relative;overflow:hidden;
+}
+.preview::after{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(ellipse,rgba(100,160,255,.03),transparent 70%);
+  pointer-events:none;
+}
+.preview .to-name{font-family:'Zen Old Mincho',serif;font-size:17px;font-weight:700;color:#E8D5A3}
+.preview .feeling{font-weight:700;font-size:16px}
+
+/* === Send button === */
+.send-btn{
+  width:100%;padding:14px;border-radius:14px;border:none;
+  font-size:16px;font-weight:700;cursor:pointer;
+  font-family:'Zen Old Mincho',serif;
+  letter-spacing:3px;transition:all .3s;color:white;
+}
+.send-active{
+  background:linear-gradient(135deg,#1a237e,#283593,#1a237e);
+  border:1px solid rgba(232,213,163,.3);
+  box-shadow:0 0 30px rgba(100,160,255,.2);
+}
+.send-active:hover{box-shadow:0 0 40px rgba(100,160,255,.3);transform:translateY(-2px)}
+.send-disabled{background:rgba(30,40,70,.5);color:rgba(180,200,255,.3);cursor:default}
+
+/* === Flower card === */
+.wish-card{
+  display:inline-flex;flex-direction:column;align-items:center;
+  margin:4px;cursor:default;width:100px;
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .4s ease;
+}
+
+/* === Date badge === */
+.date-badge{
+  font-family:'Zen Old Mincho',serif;
+  font-size:12px;font-weight:700;color:#E8D5A3;
+  padding:3px 12px;
+  background:rgba(232,213,163,.08);
+  border:1px solid rgba(232,213,163,.15);
+  border-radius:12px;display:inline-block;margin-bottom:8px;
+}
+.day-container{
+  display:flex;flex-wrap:wrap;justify-content:center;
+  background:rgba(20,30,60,.3);border-radius:16px;
+  padding:8px 4px;margin-bottom:20px;
+  border:1px solid rgba(100,160,255,.08);
+}
+
+/* === Success overlay === */
+.success-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  display:flex;justify-content:center;align-items:center;
+  z-index:100;pointer-events:none;
+  background:radial-gradient(circle,rgba(5,10,24,.4),transparent 70%);
+}
+@keyframes shootStar{
+  0%{transform:scale(0) translateY(20px);opacity:0}
+  30%{transform:scale(1.3) translateY(-10px);opacity:1}
+  60%{transform:scale(1.1) translateY(0);opacity:.9}
+  100%{transform:scale(2) translateY(-40px);opacity:0}
+}
+.shoot-anim{font-size:72px;animation:shootStar 2.2s ease forwards}
+
+/* === Empty state === */
+.empty{text-align:center;padding:60px 20px;color:rgba(180,200,255,.4)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+
+/* === Footer === */
+.footer{text-align:center;padding:20px 0;font-size:9px;color:rgba(180,200,255,.2)}
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div class="track"></div>
+<div class="train-wrap">
+  <div class="train-smoke"></div>
+  <div class="train-smoke"></div>
+  <div class="train-smoke"></div>
+  <div class="train">🚂</div>
+</div>
+
+<div id="app"></div>
+
+<script>
+// ===== Starfield =====
+(function(){
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');
+  let stars=[];
+  function resize(){c.width=innerWidth;c.height=innerHeight;init()}
+  function init(){
+    stars=[];
+    for(let i=0;i<200;i++){
+      stars.push({
+        x:Math.random()*c.width,y:Math.random()*c.height,
+        r:Math.random()*1.5+.3,
+        a:Math.random(),da:(Math.random()-.5)*.02,
+        hue:210+Math.random()*40
+      });
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s=>{
+      s.a+=s.da;
+      if(s.a>1||s.a<.2)s.da*=-1;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${s.hue},60%,80%,${s.a})`;
+      ctx.fill();
+    });
+    // Occasional shooting star
+    if(Math.random()<.003){
+      const sx=Math.random()*c.width,sy=Math.random()*c.height*.5;
+      ctx.beginPath();
+      ctx.moveTo(sx,sy);
+      ctx.lineTo(sx+60,sy+30);
+      ctx.strokeStyle='rgba(200,220,255,.6)';
+      ctx.lineWidth=1;
+      ctx.stroke();
+    }
+    requestAnimationFrame(draw);
+  }
+  resize();
+  addEventListener('resize',resize);
+  draw();
+})();
+
+// ===== Name Generator (ガチャ) =====
+// 組み合わせ: 100+ × 70+ × 90+ = 630,000通り以上
+const ADJ = [
+  // 基本の手触り
+  "ちいさな","おおきな","やさしい","つよい","しずかな","あたたかい","つめたい",
+  "ふしぎな","まぶしい","かなしい","うつくしい","とおい","ちかい","あかるい",
+  "くらい","やわらかい","かたい","あまい","にがい","するどい","まるい",
+  "ほそい","ひろい","せまい","ふかい","あさい","ながい","みじかい",
+  "はやい","おそい","あたらしい","ふるい","わかい","おもい","かるい",
+  "たかい","ひくい","あつい","すずしい","さびしい","にぎやかな","おだやかな",
+  "はげしい","ゆるやかな","なめらかな","きよらかな","ほがらかな","しなやかな",
+  "たくましい","はかない","いとおしい","なつかしい","めずらしい","たのもしい",
+  "こころよい","すがすがしい","ほほえましい","いじらしい","あどけない","けなげな","ひたむきな",
+  // 物語の手触り
+  "こわれかけの","まだ名前のない","だれも知らない","忘れられた","最後のひとりの",
+  "0.5の","読みかけの","迷子の","眠れない","雨上がりの",
+  "星に届かない","鐘の鳴らない","塔のてっぺんの","地上を知らない","空を落ちていく",
+  "ガラスでできた","鯨の背中の","紫色の海の","天井のある世界の","むき出しの",
+  "人の振りをした","感情見本にない","整数にできない","名づけられない","壊れても動く",
+  // ざらっとしたフック
+  "どうしようもない","ろくでもない","しょうもない","いいかげんな","ずるい",
+  "てきとうな","不器用な","へたくそな","おっちょこちょいの","ぽんこつの",
+  "バグだらけの","ネタバレされた","締切前の","Wi-Fiの弱い","充電3%の",
+];
+const PARTICLE = [
+  // 基本の接続
+  "例の","あの","いつかの","どこかの","むかしの","ゆめの","よるの",
+  "あさの","まぼろしの","ひみつの","さいごの","さいしょの","なぞの",
+  "でんせつの","きせきの","ほしの","うみの","もりの","まちの","そらの",
+  "かぜの","ひかりの","かげの","ゆきの","はなの","つきの","にじの",
+  "たびの","きおくの","やくそくの","おもいでの","あしたの","きのうの",
+  "ゆうぐれの","よあけの","まよなかの","しずくの","なみだの","ほほえみの",
+  "いのりの","ねがいの","うたの","ものがたりの",
+  // 小説のかけら
+  "瞳の鐘の","紫海の","浮遊石の","栄鉄の","鯨の鬚の",
+  "ハイエンタールの","リリーの塔の","アギエルの","ピースの",
+  "昼夜戦争の","地望鏡の","アーカイブの","読みかけの本の",
+  // ざらっとしたフック
+  "たぶん","おそらく","もしかしたら","きっと","まさかの",
+  "だいたい","なんとなく","うっかり","こっそり","いきなり",
+  "火曜日の","3時の","改札の","屋上の","自販機の",
+];
+const NOUN = [
+  // 古典的な存在
+  "旅人","詩人","魔法使い","星読み","夢追い人","語り部","渡り鳥",
+  "迷子","踊り子","歌い手","絵描き","時計師","灯台守","花売り",
+  "風来坊","さすらい人","占い師","手品師","人形師","楽師",
+  "鍛冶屋","薬師","錬金術師","天文学者","哲学者","冒険家",
+  "船乗り","郵便屋","本屋","パン屋","庭師","羊飼い",
+  "猫","狐","梟","鯨","蝶","蛍","龍",
+  "騎士","王子","姫","賢者","道化師","隠者","預言者",
+  "子ども","おばあちゃん","おじいちゃん","妖精","天使","幽霊",
+  // 星は知らないの住人
+  "鐘守","歌姫","神の子","パイロット","アクター","ガラスの魔法使い",
+  "にわとり頭","バケモノ","人造人間","ハッカー","煙突掃除人",
+  // 現代の存在
+  "プログラマー","コーヒー中毒者","散歩の達人","猫の下僕","布団の住人",
+  "終電ダッシャー","傘を忘れる人","しおり職人","深夜ラジオの常連",
+  "カップ麺の哲学者","屋上の住人","自販機の前の人","既読スルーの名人",
+  // 抽象的な存在
+  "0と1のあいだ","七人目の裁判官","壊れたコップ","名前のない花",
+  "電気信号","思想資本家","発電所","送電網","腐葉土",
+];
+
+function randomName(){
+  const a=ADJ[Math.random()*ADJ.length|0];
+  const p=PARTICLE[Math.random()*PARTICLE.length|0];
+  const n=NOUN[Math.random()*NOUN.length|0];
+  return {adj:a, particle:p, noun:n, full:`${a}${p}${n}`};
+}
+
+// ===== Data =====
+const TO_LABELS = [
+  {id:"akogare",label:"憧れのひと",icon:"✨"},
+  {id:"kininaru",label:"気になっていたひと",icon:"👀"},
+  {id:"aiteinai",label:"最近あっていないひと",icon:"🌙"},
+  {id:"kizutsuketa",label:"傷つけてしまったひと",icon:"🩹"},
+  {id:"genki",label:"元気になってほしいひと",icon:"🌱"},
+  {id:"tsukarete",label:"疲れているひと",icon:"☕"},
+  {id:"issho",label:"いつもいっしょにいるひと",icon:"🤝"},
+  {id:"nigate",label:"ちょっとにがてなひと",icon:"🫣"},
+];
+
+const MSG_TYPES = [
+  {id:"gomen",label:"ごめん！",emoji:"🙏",color:"#80CBC4",glow:"rgba(128,203,196,.4)"},
+  {id:"ouen",label:"応援してる！",emoji:"📣",color:"#4FC3F7",glow:"rgba(79,195,247,.4)"},
+  {id:"iine",label:"いいね！",emoji:"👍",color:"#FFD54F",glow:"rgba(255,213,79,.4)"},
+  {id:"suki",label:"すき！",emoji:"💫",color:"#F48FB1",glow:"rgba(244,143,177,.4)"},
+  {id:"daisuki",label:"だいすき！",emoji:"💖",color:"#E040FB",glow:"rgba(224,64,251,.4)"},
+];
+
+// ===== Star SVG (instead of flower) =====
+function seededRandom(s){let x=Math.sin(s*9301+49297)*49297;return x-Math.floor(x)}
+function starSVG(type, seed, size){
+  const mt=MSG_TYPES.find(m=>m.id===type)||MSG_TYPES[0];
+  const r1=seededRandom(seed),r2=seededRandom(seed+1),r3=seededRandom(seed+2);
+  const points=Math.floor(r1*3)+4;
+  const rot=r3*360;
+  const h=size/2;
+  const outerR=size*.4;
+  const innerR=outerR*(.4+r2*.2);
+  let path='';
+  for(let i=0;i<points*2;i++){
+    const a=(360/(points*2))*i+rot;
+    const rad=a*Math.PI/180;
+    const r=i%2===0?outerR:innerR;
+    const x=h+Math.cos(rad)*r;
+    const y=h+Math.sin(rad)*r;
+    path+=(i===0?'M':'L')+x+','+y;
+  }
+  path+='Z';
+  const glow=mt.color;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <defs><filter id="g${seed}"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <path d="${path}" fill="${glow}" opacity=".85" filter="url(#g${seed})"/>
+    <circle cx="${h}" cy="${h}" r="${size*.08}" fill="white" opacity=".9"/>
+  </svg>`;
+}
+
+// ===== Storage (localStorage) =====
+const STORAGE_KEY='negai-kippu-v1';
+const Storage={
+  get(){return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')},
+  add(m){const msgs=this.get();msgs.unshift(m);localStorage.setItem(STORAGE_KEY,JSON.stringify(msgs))},
+  clear(){localStorage.removeItem(STORAGE_KEY)}
+};
+
+// ===== Helpers =====
+function groupByDate(msgs){
+  const g={};
+  msgs.forEach(m=>{
+    const d=new Date(m.timestamp);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    (g[k]=g[k]||[]).push(m);
+  });
+  return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
+}
+function fmtDate(s){
+  const[y,m,d]=s.split('-');
+  const days=["日","月","火","水","木","金","土"];
+  return `${+m}月${+d}日（${days[new Date(+y,+m-1,+d).getDay()]}）`;
+}
+function fmtTime(ts){
+  const d=new Date(ts);
+  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ===== State =====
+let state={
+  messages:Storage.get(),view:'send',
+  name:randomName(),toId:'',msgType:'',
+  sending:false,showSuccess:false,successEmoji:'💫',newId:null
+};
+function setState(p){Object.assign(state,p);render()}
+
+// ===== Render =====
+function renderWish(m,isNew){
+  const seed=m.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const mt=MSG_TYPES.find(t=>t.id===m.type)||MSG_TYPES[0];
+  const to=TO_LABELS.find(t=>t.id===m.toId);
+  const style=isNew?'transform:scale(0);opacity:0':'';
+  return `<div class="wish-card" style="${style}" data-new="${isNew?'1':'0'}" title="${m.fromName}\n→ ${to?.label||''}\n${mt.label}\n${fmtTime(m.timestamp)}">
+    ${starSVG(m.type,seed,50)}
+    <div style="font-size:9px;color:rgba(180,200,255,.4);text-align:center;margin-top:2px;line-height:1.3">${to?.label||''}</div>
+    <div style="font-size:10px;color:${mt.color};font-weight:600;margin-top:1px">${mt.emoji} ${mt.label}</div>
+    <div style="font-size:7px;color:rgba(180,200,255,.25)">${fmtTime(m.timestamp)}</div>
+  </div>`;
+}
+
+function render(){
+  const s=state;
+  const app=document.getElementById('app');
+  const todayCount=s.messages.filter(m=>new Date(m.timestamp).toDateString()===new Date().toDateString()).length;
+  const canSend=s.toId&&s.msgType&&!s.sending;
+  const selMt=MSG_TYPES.find(m=>m.id===s.msgType);
+  const selTo=TO_LABELS.find(t=>t.id===s.toId);
+
+  let html='';
+
+  // Header
+  html+=`<div class="header"><div><div class="h-title">願い片道きっぷ⭐</div><div class="h-sub">今日 ${todayCount}通 ／ 累計 ${s.messages.length}通</div></div><div style="display:flex;gap:4px">`;
+  [['send','おくる'],['sky','夜空']].forEach(([v,l])=>{
+    html+=`<button class="tab-btn ${s.view===v?'tab-active':''}" onclick="setState({view:'${v}'})">${l}</button>`;
+  });
+  html+='</div></div>';
+
+  // Success
+  if(s.showSuccess){
+    html+=`<div class="success-overlay"><div class="shoot-anim">${s.successEmoji}</div></div>`;
+  }
+
+  // === Send view ===
+  if(s.view==='send'){
+    html+='<div style="padding:20px 16px">';
+
+    // From (gacha)
+    html+=`<div class="section"><span class="label">⭐ あなたは…</span>
+      <div class="ticket">
+        <div><span class="ticket-prefix">${s.name.adj}${s.name.particle}</span><br><span class="ticket-name">${s.name.noun}</span></div>
+        <button class="shuffle-btn" onclick="setState({name:randomName()})">🎲</button>
+      </div>
+    </div>`;
+
+    // To
+    html+=`<div class="section"><span class="label">⭐ だれに届けますか？</span><div>`;
+    TO_LABELS.forEach(t=>{
+      const cls=s.toId===t.id?'to-btn to-btn-active':'to-btn';
+      html+=`<button class="${cls}" onclick="setState({toId:'${t.id}'})">${t.icon} ${t.label}</button>`;
+    });
+    html+='</div></div>';
+
+    // Feel
+    html+=`<div class="section"><span class="label">⭐ なにを届けますか？</span><div class="feel-wrap">`;
+    MSG_TYPES.forEach(mt=>{
+      const sel=s.msgType===mt.id;
+      const border=sel?`1.5px solid ${mt.color}`:'1px solid rgba(100,160,255,.15)';
+      const bg=sel?`rgba(${mt.id==='gomen'?'128,203,196':mt.id==='ouen'?'79,195,247':mt.id==='iine'?'255,213,79':mt.id==='suki'?'244,143,177':'224,64,251'},.1)`:'rgba(20,30,60,.3)';
+      const cls=sel?'feel-btn feel-active':'feel-btn';
+      const clr=sel?mt.color:'rgba(180,200,255,.6)';
+      const fw=sel?'700':'400';
+      html+=`<button class="${cls}" style="border:${border};background:${bg}" onclick="setState({msgType:'${mt.id}'})">
+        <span class="feel-emoji">${mt.emoji}</span>
+        <span class="feel-label" style="color:${clr};font-weight:${fw}">${mt.label}</span>
+      </button>`;
+    });
+    html+='</div></div>';
+
+    // Preview
+    if(s.toId&&s.msgType){
+      html+=`<div class="preview">
+        <span style="color:rgba(180,200,255,.4);font-size:11px">${s.name.adj}${s.name.particle}${s.name.noun}</span>
+        <span style="color:rgba(180,200,255,.3)"> から</span><br>
+        <span class="to-name">${selTo?.icon} ${selTo?.label}</span>
+        <span style="color:rgba(180,200,255,.3)"> へ</span><br>
+        <span style="font-size:22px">${selMt?.emoji}</span>
+        <span class="feeling" style="color:${selMt?.color}">${selMt?.label}</span>
+      </div>`;
+    }
+
+    // Send
+    html+=`<button class="send-btn ${canSend?'send-active':'send-disabled'}" onclick="handleSend()" ${canSend?'':'disabled'}>
+      ${s.sending?'届けています...':'⭐ 夜空に放つ'}
+    </button>`;
+
+    // Recent
+    if(s.messages.length>0){
+      html+=`<div style="margin-top:28px"><div style="font-size:11px;font-weight:600;color:#E8D5A3;margin-bottom:8px;display:flex;justify-content:space-between;letter-spacing:1px"><span>さいきんの星</span><button style="font-size:10px;color:rgba(180,200,255,.4);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit" onclick="setState({view:'sky'})">すべて見る →</button></div><div style="display:flex;flex-wrap:wrap;justify-content:center">`;
+      s.messages.slice(0,6).forEach(m=>{
+        html+=renderWish(m,m.id===s.newId);
+      });
+      html+='</div></div>';
+    }
+    html+='</div>';
+  }
+
+  // === Sky view ===
+  if(s.view==='sky'){
+    html+='<div style="padding:16px">';
+    if(s.messages.length===0){
+      html+='<div class="empty"><div class="empty-icon">🌠</div><div>まだ願いはありません</div><div style="font-size:12px;margin-top:4px">最初のひとつを夜空に放ちましょう</div></div>';
+    } else {
+      groupByDate(s.messages).forEach(([dk,msgs])=>{
+        html+=`<div><div class="date-badge">${fmtDate(dk)}　⭐ ${msgs.length}通</div><div class="day-container">`;
+        msgs.forEach(m=>{html+=renderWish(m,false)});
+        html+='</div></div>';
+      });
+    }
+    html+='</div>';
+  }
+
+  html+='<div class="footer">願い片道きっぷ⭐ — 届かないかもしれない想いを、夜空に。</div>';
+
+  app.innerHTML=html;
+
+  setTimeout(()=>{
+    document.querySelectorAll('[data-new="1"]').forEach(el=>{
+      el.style.transform='scale(1)';el.style.opacity='1';
+    });
+  },50);
+}
+
+function handleSend(){
+  if(!state.toId||!state.msgType||state.sending)return;
+  setState({sending:true});
+  const msg={
+    id:Date.now()+'-'+Math.random().toString(36).slice(2,8),
+    fromName:state.name.full,
+    toId:state.toId,
+    type:state.msgType,
+    timestamp:new Date().toISOString()
+  };
+  Storage.add(msg);
+  const mt=MSG_TYPES.find(m=>m.id===state.msgType);
+  setState({
+    messages:Storage.get(),
+    sending:false,toId:'',msgType:'',
+    name:randomName(),
+    showSuccess:true,successEmoji:mt?.emoji||'💫',newId:msg.id
+  });
+  setTimeout(()=>setState({showSuccess:false}),2200);
+  setTimeout(()=>setState({newId:null}),1500);
+}
+
+render();
+</script>
+</body>
+</html>
